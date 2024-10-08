@@ -1,0 +1,15 @@
+[package]
+name = "mythical-bencher"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = "4.5.18"
+env_logger = "0.11.5"
+subxt = { version = "0.37.0", features = ["substrate-compat"] }
+subxt-signer = "0.37.0"
+frame-benchmarking-cli = { git = "https://github.com/skunert/polkadot-sdk", branch = "skunert/overhead-benchmark-again"  }
+sp-runtime = { git = "https://github.com/skunert/polkadot-sdk", branch = "skunert/overhead-benchmark-again"  }
+sp-io = { git = "https://github.com/skunert/polkadot-sdk", branch = "skunert/overhead-benchmark-again"  }
+hex = "0.4.3"
+tracing = { version = "0.1.40", features = ["log"]}
