@@ -11,5 +11,6 @@ subxt-signer = "0.37.0"
 frame-benchmarking-cli = { git = "https://github.com/skunert/polkadot-sdk", branch = "skunert/overhead-benchmark-again"  }
 sp-runtime = { git = "https://github.com/skunert/polkadot-sdk", branch = "skunert/overhead-benchmark-again"  }
 sp-io = { git = "https://github.com/skunert/polkadot-sdk", branch = "skunert/overhead-benchmark-again"  }
+sp-core = { git = "https://github.com/skunert/polkadot-sdk", branch = "skunert/overhead-benchmark-again"  }
 hex = "0.4.3"
 tracing = { version = "0.1.40", features = ["log"]}

@@ -1,19 +1,17 @@
-use frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicBuilder, OpaqueBlock, fetch_latest_metadata_from_blob, fetch_relevant_runtime_data};
+use frame_benchmarking_cli::{BenchmarkCmd, ExtrinsicBuilder, OpaqueBlock};
 use clap::Parser;
-use subxt::ext::sp_runtime::OpaqueExtrinsic;
 use subxt::{Config, OfflineClient};
 use subxt::client::RuntimeVersion;
 use subxt::config::substrate::{BlakeTwo256, SubstrateExtrinsicParamsBuilder, SubstrateHeader};
 use subxt::config::SubstrateExtrinsicParams;
 use subxt::utils::H256;
+use sp_core::H256 as SubstrateHash;
 use subxt_signer::eth::AccountId20;
 
 #[derive(Parser, Debug)]
 pub struct Command {
     #[command(subcommand)]
     pub sub: BenchmarkCmd,
-    #[arg(long)]
-    pub genesis_hash: String,
 }
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub enum MythicalConfig {}
@@ -53,30 +51,28 @@ impl ExtrinsicBuilder for EthExtrinsicBuilder {
     }
 
     fn build(&self, nonce: u32) -> Result<sp_runtime::OpaqueExtrinsic, &'static str> {
-        // let signer = MySigner(sp_keyring::Sr25519Keyring::Bob.pair());
-        let signer = subxt_signer::eth::dev::alith();
-        tracing::info!("Signing with account: {}, nonce: {}", hex::encode(signer.account_id().0), nonce);
-        let dynamic_tx = subxt::dynamic::tx("System", "remark", vec![vec!['a', 'b', 'b']]);
         let params = SubstrateExtrinsicParamsBuilder::<MythicalConfig>::new().nonce(nonce.into()).build();
-        // Default transaction parameters assume a nonce of 0.
+
+        let signer = subxt_signer::eth::dev::alith();
+        let dynamic_tx = subxt::dynamic::tx("System", "remark", vec![Vec::<u8>::new()]);
         let transaction = self
             .offline_client
             .tx()
             .create_signed_offline(&dynamic_tx, &signer, params)
             .unwrap();
-        let mut encoded = transaction.into_encoded();
-        sp_runtime::OpaqueExtrinsic::from_bytes(&mut encoded).map_err(|_| "Unable to construct OpaqueExtrinsic")
+        sp_runtime::OpaqueExtrinsic::from_bytes(&transaction.into_encoded()).map_err(|_| "Unable to construct OpaqueExtrinsic")
     }
 }
 
 fn main() {
     env_logger::init();
-    let mut cli = Command::parse();
+    let cli = Command::parse();
     if let BenchmarkCmd::Overhead(cmd) = cli.sub {
-        let provider = Box::new(|metadata, genesis_hash, runtime_version| {
-            EthExtrinsicBuilder::new(metadata, genesis_hash, runtime_version)
+        let extrinsic_builder_provider = Box::new(|metadata, genesis_hash: SubstrateHash, runtime_version| {
+            let genesis_hash = H256::from(genesis_hash.to_fixed_bytes());
+            Box::new(EthExtrinsicBuilder::new(metadata, genesis_hash, runtime_version)) as Box<_>
         });
-         if let Err(e) = cmd.run_with_extrinsic_builder::<OpaqueBlock, ()>(Some(provider)) {
+         if let Err(e) = cmd.run_with_extrinsic_builder::<OpaqueBlock, ()>(Some(extrinsic_builder_provider)) {
                 tracing::error!("Failed to run benchmark: {:?}", e);
          };
     }
